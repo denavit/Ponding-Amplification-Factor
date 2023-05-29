@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import pi, cos, cosh
 from PyPonding.structures import ElasticBeam2d
+import os
 
 # Define units
 inch    = 1.0
@@ -18,29 +19,33 @@ in_per_ft = inch/ft
 L       = 40*ft         # Beam span
 S       = 5*ft          # Tributary width
 E       = 29000.0*ksi   # Modulus of elasticity
-C       = 0.25          # Flexibility coefficient (ponding factor)
+I       = 75*inch**4    # Moment of inertia
 gamma   = 62.4*pcf      # Unit weight of water
 qD      = 0*psf         # Dead load
 slope   = 0.25*in_per_ft   # Beam slope
-zw      = 2*inch        # Elevation of water
+C       = (gamma*S*L**4)/(pi**4*E*I)
+Bpo     = 1/(1-C)
 
 
 # Define loading cases
-zw_over_zj_max = 1.6
-n = 49 # number of analyses
+zw_over_zh_max = 2.0
+n = 81 # number of analyses
 
-zj = slope*L
-zw = np.linspace(0,zw_over_zj_max*zj,n)
-Bp_V = np.zeros(n)
-Bp_M = np.zeros(n)
+zh = slope*L
+zw = np.linspace(0,zw_over_zh_max*zh,n)
+
+Bp_V  = np.zeros(n)
+Bp_M  = np.zeros(n)
 Bp_TL = np.zeros(n)
-Bpo = 1/(1-C)
 
+
+# Run Analyses
 for i in range(n):
     # Build beam object
-    I = (gamma*S*L**4)/(pi**4*E*C) # Moment of inertia
-    beam = ElasticBeam2d(L,S,E,I,gamma,zj=zj,qD=qD)
-    beam.num_elements = 60
+    beam = ElasticBeam2d(L,S,E,I,gamma,zj=zh,qD=qD)
+    beam.num_elements = 160
+    beam.maximum_number_of_iterations = 100
+    beam.load_tolerance = 1e-6
 
     # Run Ponding Analysis
     resultsP = beam.run_analysis_OPS('IterativeLevel',target_zw=zw[i])
@@ -62,15 +67,33 @@ for i in range(n):
     Bp_TL[i] = TotalLoadP/TotalLoad1
    
 
-# Make Plot
-fig = plt.figure()
-ax = fig.add_axes([0.15,0.15,0.80,0.80])
-line0, = plt.plot([0.0,0.2,0.8,zw_over_zj_max],[1,1,Bpo,Bpo],'--', label='Idealized')
-line1, = plt.plot(zw/zj,Bp_V,'x-',label='Analysis (Shear)')
-line2, = plt.plot(zw/zj,Bp_M,'x-',label='Analysis (Moment)')
-line3, = plt.plot(zw/zj,Bp_TL,'x-',label='Analysis (Total Load)')
-plt.xlabel('zw/zj')
-plt.ylabel('Bp')
-plt.xlim(0.0,zw_over_zj_max)
-plt.legend(handles=[line0,line1,line2,line3],frameon=False)
+# Plot Results
+save_folder = 'figures'
+if not os.path.exists(save_folder):
+    os.makedirs(save_folder)
+
+plt.rc('axes',labelsize=8)
+plt.rc('axes',titlesize=8)
+plt.rc('legend',fontsize=8)
+plt.rc('xtick',labelsize=8)
+plt.rc('ytick',labelsize=8)
+
+plt.figure(figsize=(3.5,2.5))
+plt.axes(position=[0.14,0.17,0.82,0.80])
+#line0, = plt.plot([0.0,0.2,0.8,zw_over_zh_max],[1,1,Bpo,Bpo],'--', label='Idealized')
+line0, = plt.plot([0.0,zw_over_zh_max],[Bpo,Bpo],'--', color='k', label='Basic')
+line1, = plt.plot(zw/zh,Bp_M ,'-' ,label='$AF_{Moment}$')
+line2, = plt.plot(zw/zh,Bp_TL,'-.',label='$AF_{Total\ Load}$')
+line3, = plt.plot(zw/zh,Bp_V ,':' ,label='$AF_{Shear}$')
+plt.xlabel('Normalized Water Level, $z_w/z_h$')
+plt.ylabel('Amplification Factor')
+plt.xlim(0.0,zw_over_zh_max)
+plt.legend(handles=[line1,line2,line3,line0])
+plt.savefig(os.path.join(save_folder, 'Figure_XX_OneWayExample_AF'), dpi=300)
+
 plt.show()
+
+
+# Print Data
+print(f'C   = {C:.03f}')
+print(f'Bpo = {Bpo:.03f}')
