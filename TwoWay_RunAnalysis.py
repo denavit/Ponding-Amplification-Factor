@@ -1,8 +1,6 @@
 from PyPonding.structures import IdealizedBay
-import matplotlib.pyplot as plt
-from math import pi, cos, cosh
-import numpy as np
-import os
+from math import pi
+import json
 
 # Define units
 inch      = 1.0
@@ -18,13 +16,14 @@ kipft     = kip*ft
 
 # Define members to investigate for each case
 titles = dict()
-titles['Flat']      = ["Primary Members", "Secondary Members", "Total Load"]
-titles['A']          = ["Top Primary Member", "Secondary Members"]
-titles['B']          = ["Top Primary Member", "Bottom Primary Member", "Secondary Members"]
-titles['C']          = ["Primary Members", "Secondary Member 2"]
-titles['D']          = ["Primary Members", "Secondary Member 1"]
-titles['E']          = ["Top Primary Member", "Bottom Primary Member", "Secondary Member 1"]
-titles['F']          = ["Bottom Primary Member", "Secondary Member 2"]
+titles['Flat']  = ["Primary Members", "Secondary Members", "Total Load"]
+titles['A']     = ["Top Primary Member", "Secondary Members"]
+titles['B']     = ["Top Primary Member", "Bottom Primary Member", "Secondary Members"]
+titles['C']     = ["Primary Members", "Secondary Member 2"]
+titles['D']     = ["Primary Members", "Secondary Member 1"]
+titles['E']     = ["Top Primary Member", "Bottom Primary Member", "Secondary Member 1"]
+titles['F']     = ["Bottom Primary Member", "Secondary Member 2"]
+
 
 def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,qD):
 
@@ -268,7 +267,8 @@ def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,qD):
   
     return amplification_factors
 
-def run_analysis_loop(case,Cp_list,Cs_list,roof_slope,zw_over_zh_list,qD,isplotting):
+def run_analysis_loop(case,Cp_list,Cs_list,roof_slope,zw_over_zh_list,qD):
+    '''run multiple analyses and save results to json'''
     
     # Get percentage completion
     count = 0
@@ -321,160 +321,25 @@ def run_analysis_loop(case,Cp_list,Cs_list,roof_slope,zw_over_zh_list,qD,isplott
                     else:
                         return print(f"Unknown title: '{title}'") 
                     
-                    Bp_results[Cs][Cp][title].append(Bp_max)       
-            
-    if isplotting:    
-        two_way_plot(case, Bp_results, Cs_list, Cp_list) 
+                    Bp_results[Cs][Cp][title].append(Bp_max) 
+    
+    with open(f'Bp_results_{case}.json', 'w') as j:
+    # write the dictionary to the file in JSON format
+        json.dump(Bp_results, j)
                 
     return Bp_results
 
-def equation_generator(case,Bp_results,Cs_list,Cp_list,Cs_coefs=None,Cp_coefs=None):
-    
-    if Cs_coefs is None:
-        # Set to default value
-        Cs_coefs = [0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,
-                    0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00,
-                    1.05,1.10,1.15,1.20,1.25,1.30,1.35,1.40,1.45,1.50,
-                    1.55,1.60,1.65,1.70,1.75,1.80,1.85,1.90,1.95,2.00]
-    
-    if Cp_coefs is None:
-        # Set to default value
-        Cp_coefs = [0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,
-                    0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00,
-                    1.05,1.10,1.15,1.20,1.25,1.30,1.35,1.40,1.45,1.50,
-                    1.55,1.60,1.65,1.70,1.75,1.80,1.85,1.90,1.95,2.00]
-        
-    # initialize dictionary of coefficients
-    ideal_coefs = dict()
-    
-    # find equation for each member category
-    for title in titles[case]:
-        
-        ideal_coefs[title] = dict()  
-        
-        error_sum = float('inf') # inf so that first error automatically replaces it    
-        for Cs_coef in Cs_coefs:
-            for Cp_coef in Cp_coefs:
-                                   
-                # Compute error for this combination of coefs
-                test_error_sum = 0
-                for Cs in Cs_list:                    
-                    for Cp in Cp_list:
-                        Bp_ref = max(Bp_results[Cs][Cp][title]) # Takes the max amplification
-                        
-                        if (1-Cp_coef*Cp-Cs_coef*Cs) <= 0:
-                            error = float('inf')
-                        else:
-                            M = 1
-                            if Bp_ref-(1/(1-Cp_coef*Cp-Cs_coef*Cs)) > 0:
-                                M = 5 # Penalty for underestimating the amplification factor
-                            error = M*(Bp_ref-(1/(1-Cp_coef*Cp-Cs_coef*Cs)))**2
-                        
-                        test_error_sum += error
-                        
-                # Set this combination of coefs if it gives the lowest error
-                if test_error_sum < error_sum:
-                    ideal_coefs[title]['Cp_coef'] = Cp_coef
-                    ideal_coefs[title]['Cs_coef'] = Cs_coef
-                    error_sum = test_error_sum
-    
-    return ideal_coefs
 
-def two_way_plot(case, Bp_results, Cs_list, Cp_list):
-    
-    color_list = ['tab:blue','tab:orange','tab:green','tab:red']
-    
-    # Create folder to save figures to if it doesn't exist
-    try:
-        os.mkdir(f'Case {case} Plots')
-    except FileExistsError:
-        pass
-    
-    for Cs in Cs_list:
-    
-        # Make plots
-        for title in titles[case]:
-            
-            #figure
-            loop_fig = plt.figure(figsize=(3.25,2.75), dpi = 300) 
-            
-            #plot for each title/type of plot
-            for iCp, Cp in enumerate(Cp_list):
-                
-                #plot data
-                loop_plot = plt.plot(zw_over_zh_list, Bp_results[Cs][Cp][title], label=f'$C_p$ = {Cp}', color=color_list[iCp])  
-                
-                #equation line based on case
-                if case == 'Flat':
-                    if title == 'Primary Members':
-                        ideal_Bp = 1/(1-1.05*Cp-0.85*Cs)
-                        active_Bp_equation_line2 = plt.plot([0.5,1.5],[ideal_Bp,ideal_Bp],'--', color=color_list[iCp])
-                    elif title == 'Secondary Members':
-                        ideal_Bp = 1/(1-1.15*Cp-1.0*Cs)
-                        active_Bp_equation_line2 = plt.plot([0.5,1.5],[ideal_Bp,ideal_Bp],'--', color=color_list[iCp])
-                    else: 
-                        ideal_Bp = 1/(1-0.85*Cp-0.85*Cs)
-                        active_Bp_equation_line2 = plt.plot([0.0,1.5],[ideal_Bp,ideal_Bp],'--', color=color_list[iCp])
-                elif case == 'A':
-                    ideal_Bp = 1/(1-0.65*Cp-1.15*Cs)
-                    active_Bp_equation_line2 = plt.plot([0.0,0.2,0.8,1.5],[1,1,ideal_Bp,ideal_Bp],'--', color=color_list[iCp])
-                    primary_basic_Bp = 1/(1-1.05*Cp-0.85*Cs)
-                    active_Bp_equation_line = plt.plot([1.2,1.5],[ideal_Bp,ideal_Bp],':', color=color_list[iCp])
-                elif case == 'B':
-                    ideal_Bp = 1/(1-1.2*Cp-1.1*Cs)
-                    active_Bp_equation_line2 = plt.plot([0.0,0.8,1.5],[1,ideal_Bp,ideal_Bp],'--', color=color_list[iCp])
-                    primary_basic_Bp = 1/(1-1.05*Cp-0.85*Cs)
-                    active_Bp_equation_line = plt.plot([1.2,1.5],[ideal_Bp,ideal_Bp],':', color=color_list[iCp])
-                elif case == 'C':
-                    ideal_Bp = 1/(1-1.0*Cp-0.85*Cs)
-                    active_Bp_equation_line = plt.plot([0.0,0.8,1.5],[1,ideal_Bp,ideal_Bp],'--', color=color_list[iCp])
-                elif case == 'D':
-                    ideal_Bp = 1/(1-1.0*Cp-0.9*Cs)
-                    active_Bp_equation_line = plt.plot([0.0,0.8,1.5],[1,ideal_Bp,ideal_Bp],'--', color=color_list[iCp])
-                elif case == 'E':
-                    ideal_Bp = 1/(1-1.15*Cp-1.1*Cs)
-                    active_Bp_equation_line = plt.plot([0.0,0.8,1.5],[1,ideal_Bp,ideal_Bp],'--', color=color_list[iCp])
-                    primary_basic_Bp = 1/(1-1.05*Cp-0.85*Cs)
-                    active_Bp_equation_line = plt.plot([1.2,1.5],[ideal_Bp,ideal_Bp],':', color=color_list[iCp])
-                elif case == 'F':
-                    ideal_Bp = 1/(1-0.65*Cp-1.0*Cs)
-                    active_Bp_equation_line = plt.plot([0.0,0.8,1.5],[1,ideal_Bp,ideal_Bp],'--', color=color_list[iCp])
-                    ideal_Bp = 1/(1-0.65*Cp-0.9*Cs)
-                    active_Bp_equation_line = plt.plot([0.0,0.8,1.5],[1,ideal_Bp,ideal_Bp],':', color=color_list[iCp])
-    
-            #formatting
-            plt.title(f'Case {case} --- $C_s$ = {Cs} --- {title}', fontsize = 8)
-            plt.xlabel('$z_w/z_h$', fontsize = 8)
-            plt.xticks(fontsize = 8)
-            plt.ylabel('Amplification Factor, $B_p$', fontsize = 8)
-            plt.yticks(fontsize = 8)
-            plt.legend(fontsize = 8)
-        
-            #save to folder
-            plt.savefig(f'Case {case} Plots/Case_{case}_Cs_{Cs}_{title[0]}_Plot.png', bbox_inches = 'tight')
+# Run Analyses
+roof_slope = 0.5*in_per_ft
+qD = 0.0*psf
+Cs_list = [0.001, 0.1, 0.2, 0.3]
+Cp_list = [0.001, 0.1, 0.2, 0.3]
+zw_over_zh_list = [0.001,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,
+                    0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,1.00,1.05,1.10,
+                    1.15,1.20,1.25,1.30,1.35,1.40,1.45,1.50]
 
-
-
-if __name__ == "__main__":
-    case = 'Flat'
-    roof_slope = 0.5*in_per_ft
-    qD = 0.0*psf
-
-    # Run Single Analysis
-    #Cp = 0.3
-    #Cs = 0.3
-    #zw_over_zh = 0.5
-    #amplification_factors = run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,qD)
-    
-    # Run Analysis Loop
-    Cs_list = [0.001, 0.1, 0.2, 0.3]
-    Cp_list = [0.001, 0.1, 0.2, 0.3]
-    zw_over_zh_list = [0.001,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,1.00,1.05,1.10,1.15,1.20,1.25,1.30,1.35,1.40,1.45,1.50]  
-    #zw_over_zh_list = [0.5, 1.5]
-
-
-    #Bp_results = run_analysis_loop(case,Cp_list,Cs_list,roof_slope,zw_over_zh_list,qD,False)
-    #ideal_coefs = equation_generator(case,Bp_results,Cs_list,Cp_list)
-    #print(ideal_coefs)
-    #two_way_plot(case, Bp_results, Cs_list, Cp_list)
-    
+cases = ['Flat','A','B','C','D','E','F']
+for case in cases:
+    Bp_results = run_analysis_loop(case,Cp_list,Cs_list,roof_slope,zw_over_zh_list,qD)
+    print(Bp_results)
