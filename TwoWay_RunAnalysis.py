@@ -78,10 +78,10 @@ def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,qD):
         zh = roof_slope*Lp
         zw = zw_over_zh*zh
         
-        z_TL = 0.0*inch
-        z_TR = 0.0*inch
-        z_BL = zh
-        z_BR = zh
+        z_TL = zh
+        z_TR = zh
+        z_BL = 0.0*inch
+        z_BR = 0.0*inch
         
         edge_condition_L = 'mirrored'
         edge_condition_R = 'mirrored'
