@@ -1,3 +1,6 @@
+# The purpose of this script is to generate data for all bay configurations. 
+# Shear, moment, and amplification factor data are generated and saved to json files.
+
 from PyPonding.structures import IdealizedBay
 from math import pi
 import json
@@ -22,15 +25,15 @@ titles['B']     = ["Top Primary Member", "Bottom Primary Member", "Secondary Mem
 titles['C']     = ["Primary Members", "Secondary Member 2"]
 titles['D']     = ["Primary Members", "Secondary Member 1"]
 titles['E']     = ["Top Primary Member", "Bottom Primary Member", "Secondary Member 1"]
-titles['F']     = ["Bottom Primary Member", "Secondary Member 2"]
+titles['F']     = ["Top Primary Member", "Secondary Member 2"]
 
 
-def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,qD):
+def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,num_spaces,qD):
+    # Runs an iterative ponding analysis at a single water level.
 
     # Bay Geometry
     Lp = 40*ft
     Ls = 40*ft
-    num_spaces = 16
     S  = Lp/num_spaces
 
     # Loads
@@ -60,7 +63,7 @@ def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,qD):
         
     elif case == 'A':
         
-        zh = roof_slope*Lp
+        zh = roof_slope*Ls
         zw = zw_over_zh*zh
         
         z_TL = zh
@@ -75,7 +78,7 @@ def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,qD):
         
     elif case == 'B':
         
-        zh = roof_slope*Lp
+        zh = roof_slope*Ls
         zw = zw_over_zh*zh
         
         z_TL = zh
@@ -90,7 +93,7 @@ def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,qD):
         
     elif case == 'C':
         
-        zh = roof_slope*Ls
+        zh = roof_slope*Lp
         zw = zw_over_zh*zh
         
         z_TL = 0.0*inch
@@ -105,7 +108,7 @@ def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,qD):
         
     elif case == 'D':
         
-        zh = roof_slope*Ls
+        zh = roof_slope*Lp
         zw = zw_over_zh*zh
         
         z_TL = 0.0*inch
@@ -123,9 +126,9 @@ def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,qD):
         zh = roof_slope*Lp
         zw = zw_over_zh*zh
         
-        z_TL = 0.0*inch
+        z_TL = zh
         z_TR = zh
-        z_BL = zh
+        z_BL = 0.0*inch
         z_BR = zh
         
         edge_condition_L = 'mirrored'
@@ -139,14 +142,14 @@ def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,qD):
         zw = zw_over_zh*zh
         
         z_TL = 0.0*inch
-        z_TR = 0.0*inch
+        z_TR = zh
         z_BL = 0.0*inch
-        z_BR = zh
+        z_BR = 0.0*inch
         
         edge_condition_L = 'rigid'
         edge_condition_R = 'mirrored'
-        edge_condition_T = 'rigid'
-        edge_condition_B = 'mirrored'
+        edge_condition_T = 'mirrored'
+        edge_condition_B = 'rigid'
         
     else:
         raise ValueError(f'Unknown case {case}')
@@ -267,79 +270,85 @@ def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,qD):
   
     return amplification_factors
 
-def run_analysis_loop(case,Cp_list,Cs_list,roof_slope,zw_over_zh_list,qD):
-    '''run multiple analyses and save results to json'''
-    
+def run_analysis_loop(case,Cp_list,Cs_list,roof_slope,zw_over_zh_list,num_spaces_list,qD):
+    # Run an iterative ponding analyses at several water levels.
+
     # Get percentage completion
     count = 0
-    total = len(Cs_list) * len(Cp_list) * len(zw_over_zh_list)
+    total = len(Cs_list) * len(Cp_list) * len(num_spaces_list) * len(zw_over_zh_list)
     
     # Initalize Bp list
-    Bp_results = dict()
+    results = []
     
-    # Loop Cs values
+    # Run analyses for each value of Cs, Cp, and num_spaces
     for Cs in Cs_list:
-                 
-        # Initalize Bp list
-        Bp_results[Cs] = dict()
-     
-        # Run analyses for each Cp value
-        for iCp, Cp in enumerate(Cp_list):
+        for Cp in Cp_list:
+            for num_spaces in num_spaces_list:
             
-            # Inititalize results data structure
-            Bp_results[Cs][Cp] = dict()
-            for title in titles[case]:
-                Bp_results[Cs][Cp][title] = []
-
-            # Run analyises
-            for zw_over_zh in zw_over_zh_list:
-                
-                # Get percentage completion
-                count += 1
-                completion_status = round(100 * (count/total), 1)
-                
-                print(f'\n==== Analysis {completion_status}% complete. ==== \n==== Analysis for Case = {case}, {Cs = }, {Cp = }, {zw_over_zh = } ====\n')
-                
-                amplification_factors = run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,qD)       
-                                                                      
-                # Save needed results
+                # Inititalize results data structure
+                amplification_factor = dict()
                 for title in titles[case]:
-                    if title == "Primary Members":
-                        Bp_max = max(amplification_factors['top'], amplification_factors['bottom'])
-                    elif title == "Top Primary Member":
-                        Bp_max = amplification_factors['top']
-                    elif title == "Bottom Primary Member":
-                        Bp_max = amplification_factors['bottom']
-                    elif title == "Secondary Members":
-                        Bp_max = max(amplification_factors['secondary'])
-                    elif title == "Secondary Member 1":
-                        Bp_max = amplification_factors['secondary'][0]
-                    elif title == "Secondary Member 2":
-                        Bp_max = amplification_factors['secondary'][1]
-                    elif title == "Total Load":
-                        Bp_max = amplification_factors['total_load']
-                    else:
-                        return print(f"Unknown title: '{title}'") 
+                    amplification_factor[title] = []
+
+                # Run analyses
+                for zw_over_zh in zw_over_zh_list:
                     
-                    Bp_results[Cs][Cp][title].append(Bp_max) 
+                    # Get percentage completion
+                    count += 1
+                    completion_status = round(100 * (count/total), 1)
+                    
+                    print(f'\n==== Analysis {completion_status}% complete. ==== \n==== Analysis for Case = {case}, {num_spaces = }, {Cs = }, {Cp = }, {zw_over_zh = } ====\n')
+                    
+                    amplification_factors = run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,num_spaces,qD)       
+                                                                          
+                    # Save needed results
+                    for title in titles[case]:
+                        if title == "Primary Members":
+                            Bp_max = max(amplification_factors['top'], amplification_factors['bottom'])
+                        elif title == "Top Primary Member":
+                            Bp_max = amplification_factors['top']
+                        elif title == "Bottom Primary Member":
+                            Bp_max = amplification_factors['bottom']
+                        elif title == "Secondary Members":
+                            Bp_max = max(amplification_factors['secondary'])
+                        elif title == "Secondary Member 1":
+                            Bp_max = amplification_factors['secondary'][0]
+                        elif title == "Secondary Member 2":
+                            Bp_max = amplification_factors['secondary'][1]
+                        elif title == "Total Load":
+                            Bp_max = amplification_factors['total_load']
+                        else:
+                            return print(f"Unknown title: '{title}'") 
+                        
+                        amplification_factor[title].append(Bp_max) 
+        
+                results.append({
+                    'Cs': Cs, 
+                    'Cp': Cp, 
+                    'num_spaces': num_spaces,
+                    'zw_over_zh_list': zw_over_zh_list, 
+                    'amplification_factor': amplification_factor,
+                })
     
-    with open(f'Bp_results_{case}.json', 'w') as j:
     # write the dictionary to the file in JSON format
-        json.dump(Bp_results, j)
-                
-    return Bp_results
+    with open(f'results_{case}.json', 'w') as j:
+        json.dump(results, j)
+
+    return results
 
 
-# Run Analyses
-roof_slope = 0.5*in_per_ft
-qD = 0.0*psf
-Cs_list = [0.001, 0.1, 0.2, 0.3]
-Cp_list = [0.001, 0.1, 0.2, 0.3]
-zw_over_zh_list = [0.001,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,
-                    0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,1.00,1.05,1.10,
-                    1.15,1.20,1.25,1.30,1.35,1.40,1.45,1.50]
+if __name__ == "__main__":
+    roof_slope = 0.5*in_per_ft
+    qD = 0.0*psf
 
-cases = ['Flat','A','B','C','D','E','F']
-for case in cases:
-    Bp_results = run_analysis_loop(case,Cp_list,Cs_list,roof_slope,zw_over_zh_list,qD)
-    print(Bp_results)
+    Cp_list = [0.001, 0.1, 0.2, 0.3]
+    Cs_list = [0.001, 0.1, 0.2, 0.3]
+    zw_over_zh_list = [0.001,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,
+                             0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00,
+                             1.05,1.10,1.15,1.20,1.25,1.30,1.35,1.40,1.45,1.50]
+    num_spaces_list = [2,16]
+
+    cases = ['Flat','A','B','C','D','E','F']
+    cases = ['F']
+    for case in cases:
+        run_analysis_loop(case,Cp_list,Cs_list,roof_slope,zw_over_zh_list,num_spaces_list,qD)
