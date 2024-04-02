@@ -59,7 +59,7 @@ def two_way_plot(case, Cs, num_spaces, member_title, save_name=None, save_folder
     
     # Create figure
     fig = plt.figure(figsize=(3.25,2.75))
-    ax = fig.add_axes([0.15,0.15,0.80,0.82])
+    ax = fig.add_axes([0.18,0.15,0.77,0.82])
    
     i = 0
     for result in results:
@@ -93,9 +93,12 @@ def two_way_plot(case, Cs, num_spaces, member_title, save_name=None, save_folder
         i += 1
         
     # Plot formatting
+    (_,ytop) = ax.get_ylim()
+    if ytop <= 1.25:
+        ax.set_yticks([1.00,1.05,1.10,1.15,1.20,1.25])
     #plt.title(f'Config. {case} --- $C_s$ = {Cs} --- {member_title} --- {num_spaces} spaces', fontsize = 8)
     plt.xlim((0,zwzh_max))
-    plt.ylim(bottom=1)
+    plt.ylim(bottom=1,top=ytop)
     plt.xlabel('Normalized Water Level, $z_w/z_h$')
     plt.ylabel('Amplification Factor, $B_p$')
     plt.legend(loc='lower right',frameon=False)
