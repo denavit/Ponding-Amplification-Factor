@@ -12,7 +12,7 @@ plt.rc('font',family='serif')
 plt.rc('mathtext',fontset='dejavuserif')
 plt.rc('axes',labelsize=8)
 plt.rc('axes',titlesize=8)
-plt.rc('legend',fontsize=8)
+plt.rc('legend',fontsize=6)
 plt.rc('xtick',labelsize=8)
 plt.rc('ytick',labelsize=8)
   
@@ -59,7 +59,7 @@ def two_way_plot(case, Cs, num_spaces, member_title, save_name=None, save_folder
     
     # Create figure
     fig = plt.figure(figsize=(3.25,2.75))
-    ax = fig.add_axes([0.18,0.15,0.77,0.82])
+    ax = fig.add_axes([0.18,0.22,0.76,0.74])
    
     i = 0
     for result in results:
@@ -101,7 +101,7 @@ def two_way_plot(case, Cs, num_spaces, member_title, save_name=None, save_folder
     plt.ylim(bottom=1,top=ytop)
     plt.xlabel('Normalized Water Level, $z_w/z_h$')
     plt.ylabel('Amplification Factor, $B_p$')
-    plt.legend(loc='lower right',frameon=False)
+    plt.legend(loc='upper center',frameon=True,ncol=4,bbox_to_anchor=(0.42,-0.18))
 
     # Save Figure
     if save_name is None:
