@@ -85,7 +85,7 @@ def run_single_one_way_analysis(zw_over_zh, make_Figure_5=False):
         plt.xlim([0,L/m])
         plt.ylim([-2,6.5])
         plt.text(5,0.5,r'$AF_{shear}=\dfrac{'+f'{VmaxP/kN:.3f}'+r'\text{ kN}}{'+f'{Vmax1/kN:.3f}'+r'\text{ kN}}='+f'{VmaxP/Vmax1:.3f}'+r'$',fontsize=8)
-        plt.savefig(os.path.join(save_folder, 'Figure_5a_Shear'), dpi=300)        
+        plt.savefig(os.path.join(save_folder, 'Figure 05a - Shear'), dpi=300)        
         
         plt.figure(figsize=(3.5,2.5))
         plt.axes(position=(0.14,0.17,0.84,0.80))
@@ -102,7 +102,7 @@ def run_single_one_way_analysis(zw_over_zh, make_Figure_5=False):
         plt.xlim([0,L/m])
         plt.ylim([0,12])
         plt.text(0.9,1.8,r'$AF_{moment}=\dfrac{'+f'{MmaxP/kNm:.3f}'+r'\text{ kN-m}}{'+f'{Mmax1/kNm:.3f}'+r'\text{ kN-m}}='+f'{MmaxP/Mmax1:.3f}'+r'$',fontsize=8)
-        plt.savefig(os.path.join(save_folder, 'Figure_5b_Moment'), dpi=300)
+        plt.savefig(os.path.join(save_folder, 'Figure 05b - Moment'), dpi=300)
         
         plt.show()
         
@@ -131,7 +131,7 @@ def Figure_6():
     plt.ylabel('Amplification Factor')
     plt.xlim([0,zw_over_zh_max])
     plt.ylim([0.9,2.3])
-    plt.savefig(os.path.join(save_folder, 'Figure_6'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(save_folder, 'Figure 06'), dpi=300, bbox_inches='tight')
 
     plt.show()
 
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     #moment values are generated to illustrate the drivation of the amplification 
     #factor. The change in amplification for many water levels is also plotted.
 
-    save_folder = 'figures'
+    save_folder = os.path.join('figures', 'Paper_Figures')
     if not os.path.exists(save_folder):
         os.makedirs(save_folder)
 

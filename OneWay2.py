@@ -127,7 +127,7 @@ for j, kz in enumerate(kz_list):
 
 
 # Plot Results
-save_folder = 'figures'
+save_folder = os.path.join('figures', 'Paper_Figures')
 if not os.path.exists(save_folder):
     os.makedirs(save_folder)
 
@@ -161,7 +161,7 @@ plt.ylabel('Location of Force Resultant\nfrom Left End Divided by Beam Length')
 plt.xlim(0.0,zw_over_zh_max)
 plt.ylim(0.0,0.5)
 plt.legend()
-plt.savefig(os.path.join(save_folder, 'Figure_9'), dpi=300)
+plt.savefig(os.path.join(save_folder, 'Figure 09'), dpi=300)
 
 
 # Right reaction AF vs zw/zh
@@ -204,7 +204,7 @@ ax2 = ax1.twinx()
 ax2.set_ylabel('Amplification of Right Support Reaction')
 ax2.plot(zw/zh,R2_list_AF[2], color='k',linestyle=':')
 ax2.set_ylim(1,4)
-plt.savefig(os.path.join(save_folder, 'Figure_10'), dpi=300)
+plt.savefig(os.path.join(save_folder, 'Figure 10'), dpi=300)
 
 plt.show()
 
