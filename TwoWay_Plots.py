@@ -44,12 +44,21 @@ def two_way_plot(case, Cs, num_spaces, member_title, save_name=None, save_folder
     zwzh_max = 1.5
     color_list = ['tab:blue','tab:orange','tab:green','tab:red']
 
+    nice_member_title = {'Primary Members':'Primary',
+                         'Secondary Members':'Secondary',
+                         'Total Load':'Total Load',
+                         'Top Primary Member':'Higher Primary',
+                         'Bottom Primary Member':'Lower Primary',
+                         'Secondary Member 1':'Lowest Secondary',
+                         'Secondary Member 2':'Lowest Secondary'}
+
+
     # Create folder to save figures to if it doesn't exist
     if save_folder_name is None:
-        save_folder_name = f'Config. {case} Plots'
+        save_folder_name = f'Config {case} - {nice_member_title[member_title]}'
     
     try:
-        os.mkdir(save_folder_name)
+        os.mkdir(os.path.join('figures',save_folder_name))
     except FileExistsError:
         pass    
 
@@ -105,9 +114,9 @@ def two_way_plot(case, Cs, num_spaces, member_title, save_name=None, save_folder
 
     # Save Figure
     if save_name is None:
-        save_name = f'Case_{case}_Cs_{Cs}_{num_spaces}spaces_{member_title}_Plot.png'
+        save_name = f'Cs_{Cs}_{num_spaces}spaces.png'
         
-    plt.savefig(os.path.join(save_folder_name, save_name), dpi = 300)
+    plt.savefig(os.path.join('figures',save_folder_name, save_name), dpi = 300)
 
     # Close figure
     plt.close(fig)
@@ -153,6 +162,12 @@ def create_all_figures(case_list=None):
                     two_way_plot(case, Cs, num_spaces, member_title)
 
 if __name__ == "__main__":
-    #create_paper_figures()
+
+    try:
+        os.mkdir(os.path.join('figures'))
+    except FileExistsError:
+        pass  
+
+    create_paper_figures()
     create_all_figures()
     #two_way_plot("A",0.3,16,"Top Primary Member","Test_Plot")
