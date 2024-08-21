@@ -109,7 +109,7 @@ def two_way_plot(case, Cs, num_spaces, member_title, save_name=None, save_folder
     plt.xlim((0,zwzh_max))
     plt.ylim(bottom=1,top=ytop)
     plt.xlabel('Normalized Water Level, $z_w/z_h$')
-    plt.ylabel('Amplification Factor, $B_p$')
+    plt.ylabel('Amplification')
     plt.legend(loc='upper center',frameon=True,ncol=4,bbox_to_anchor=(0.42,-0.18))
 
     # Save Figure
