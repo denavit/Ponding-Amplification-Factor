@@ -123,12 +123,14 @@ def two_way_plot(case, Cs, num_spaces, member_title, save_name=None, save_folder
 
 def create_paper_figures():
     # Creates figures that appear in the paper named by the figure number.
-    two_way_plot('A', 0.3, 16, 'Secondary Members',  'Figure 11', 'Paper_Figures')
-    two_way_plot('A', 0.3, 16, 'Top Primary Member', 'Figure 12', 'Paper_Figures')
-    two_way_plot('B', 0.3, 16, 'Secondary Members',  'Figure 13', 'Paper_Figures')
-    two_way_plot('C', 0.3, 16, 'Primary Members',    'Figure 14', 'Paper_Figures')
-    two_way_plot('C', 0.3,  2, 'Secondary Member 2', 'Figure 15', 'Paper_Figures')
-
+    two_way_plot('Flat', 0.3, 16, 'Primary Members',    'Figure 8',   'Paper_Figures')
+    two_way_plot(   'A', 0.3, 16, 'Secondary Members',  'Figure 12',  'Paper_Figures')
+    two_way_plot(   'A', 0.3, 16, 'Top Primary Member', 'Figure 13',  'Paper_Figures')
+    two_way_plot(   'B', 0.3, 16, 'Secondary Members',  'Figure 14',  'Paper_Figures')
+    two_way_plot(   'C', 0.3, 16, 'Primary Members',    'Figure 15',  'Paper_Figures')
+    two_way_plot(   'C', 0.3,  2, 'Secondary Member 2', 'Figure 16a', 'Paper_Figures')
+    two_way_plot(   'C', 0.3, 16, 'Secondary Member 2', 'Figure 16b', 'Paper_Figures')
+    
 def create_all_figures(case_list=None):
     # Creates figures for all cases
     
