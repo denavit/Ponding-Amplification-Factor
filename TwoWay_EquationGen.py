@@ -16,7 +16,7 @@ pcf       = psf/ft
 kipft     = kip*ft
 
 
-def equation_generator(case, num_spaces, member_title, Cs_coefs=None,Cp_coefs=None): 
+def equation_generator(case, num_spaces, member_title, Cs_coefs=None,Cp_coefs=None,target_zw_over_zh=None): 
 
     # Read results from json file
     results = json.load(open(f'results_{case}.json'))
@@ -24,12 +24,14 @@ def equation_generator(case, num_spaces, member_title, Cs_coefs=None,Cp_coefs=No
     Cp_list = []
     Cs_list = []
     amplification_factor_list = dict()
+    zw_over_zh_list = dict()
     
     for result in results:
         if result["num_spaces"] == num_spaces and member_title in result["amplification_factor"]:
             Cs_list.append(result["Cs"])
             Cp_list.append(result["Cp"])
             amplification_factor_list[f'Cs={result["Cs"]},Cp={result["Cp"]}'] = result["amplification_factor"][member_title]
+            zw_over_zh_list[f'Cs={result["Cs"]},Cp={result["Cp"]}'] = result["zw_over_zh_list"]
     
     if Cs_coefs is None:
         # Set to default value
@@ -63,8 +65,14 @@ def equation_generator(case, num_spaces, member_title, Cs_coefs=None,Cp_coefs=No
             for Csi, Cs in enumerate(Cs_list):                    
                 for Cpi, Cp in enumerate(Cp_list):
                 
-                    # Use the maximum amplification over all zw/zh
-                    Bp_ref = max(amplification_factor_list[f'Cs={Cs},Cp={Cp}']) 
+                    # Determine reference amplification value
+                    if target_zw_over_zh is None:
+                        # Use the maximum amplification over all zw/zh
+                        Bp_ref = max(amplification_factor_list[f'Cs={Cs},Cp={Cp}'])
+                    else:
+                        # Use the amplification for the target zw/zh
+                        ind = zw_over_zh_list[f'Cs={Cs},Cp={Cp}'].index(target_zw_over_zh)
+                        Bp_ref = amplification_factor_list[f'Cs={Cs},Cp={Cp}'][ind]
                     
                     # Calculate the incremenet in total error from this data point
                     if (1-Cp_coef*Cp-Cs_coef*Cs) <= 0:
@@ -132,7 +140,14 @@ if __name__ == "__main__":
     ideal_coefs = equation_generator(case, num_spaces, member_title)
     print(ideal_coefs)
     '''
-
+    
+    '''
+    ideal_coefs = equation_generator('B', 16, 'Top Primary Member')
+    print(ideal_coefs)
+    ideal_coefs = equation_generator('B', 16, 'Top Primary Member', target_zw_over_zh=1.5)
+    print(ideal_coefs)
+    '''
+    
     gen_all_equations()
 
 
