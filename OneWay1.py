@@ -128,7 +128,7 @@ def Figure_6():
     plt.plot([0,0.15,0.75,zw_over_zh_max],[1,1,basic_AF,basic_AF],color='r', linestyle=':',label='Considering Water Height')   
     plt.legend()
     plt.xlabel('Normalized Water Height, $z_w/z_h$')
-    plt.ylabel('Amplification Factor')
+    plt.ylabel('Amplification')
     plt.xlim([0,zw_over_zh_max])
     plt.ylim([0.9,2.3])
     plt.savefig(os.path.join(save_folder, 'Figure 06'), dpi=300, bbox_inches='tight')
