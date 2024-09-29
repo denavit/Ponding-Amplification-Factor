@@ -28,7 +28,7 @@ titles['E']     = ["Top Primary Member", "Bottom Primary Member", "Secondary Mem
 titles['F']     = ["Top Primary Member", "Secondary Member 2"]
 
 
-def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,num_spaces,qD):
+def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,num_spaces,qD,return_extra_output=False):
     # Runs an iterative ponding analysis at a single water level.
 
     # Bay Geometry
@@ -195,6 +195,7 @@ def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,num_spaces,qD):
     resultsP = bay.Run_Analysis(zw)
 
     amplification_factors = dict()
+    extra_output = dict()
 
     AF = 1/(1-1.15*Cp-Cs)
     print('\nBasic Amplification 1/(1-1.15Cp-Cs) = %.3f' % (AF))
@@ -256,6 +257,8 @@ def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,num_spaces,qD):
         MmaxP = max(resultsP.top_primary_member_moment)/12
         print(f'Primary Top    {Vmax0:>8.2f}         {Mmax0:>8.2f}         {VmaxP:>8.2f}         {MmaxP:>8.2f}         {VmaxP/Vmax0:>8.3f}         {MmaxP/Mmax0:>8.3f}')
         amplification_factors['top'] = max(VmaxP/Vmax0,MmaxP/Mmax0)
+        extra_output['MmaxP'] = MmaxP
+        extra_output['Mmax0'] = Mmax0
         
     # Bottom Primary Member
     if bay.edge_condition_B == 'rigid':
@@ -268,7 +271,10 @@ def run_single_analysis(case,Cp,Cs,roof_slope,zw_over_zh,num_spaces,qD):
         print(f'Primary Bottom {Vmax0:>8.2f}         {Mmax0:>8.2f}         {VmaxP:>8.2f}         {MmaxP:>8.2f}         {VmaxP/Vmax0:>8.3f}         {MmaxP/Mmax0:>8.3f}')
         amplification_factors['bottom'] = max(VmaxP/Vmax0,MmaxP/Mmax0)
   
-    return amplification_factors
+    if return_extra_output:
+        return (amplification_factors,extra_output)
+    else:
+        return amplification_factors
 
 def run_analysis_loop(case,Cp_list,Cs_list,roof_slope,zw_over_zh_list,num_spaces_list,qD):
     # Run an iterative ponding analyses at several water levels.
